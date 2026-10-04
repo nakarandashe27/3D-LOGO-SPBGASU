@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Эмблема СПбГАСУ · 3D</title>
+    <meta name="description" content="Интерактивная 3D-эмблема Санкт-Петербургского государственного архитектурно-строительного университета: металл, эмаль, эпоксидная смола." />
+    <meta name="theme-color" content="#050505" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <main class="viewer" id="viewer">
+        <canvas id="scene" aria-label="3D-эмблема СПбГАСУ. Потяните, чтобы повернуть; клик — перевернуть."></canvas>
+        <div class="labels" id="labels"></div>
+        <div class="viewer-top">
+          <div class="brand"><i></i>СПбГАСУ <span>· 1832</span></div>
+          <button class="icon-btn" id="togglePanel" title="Панель настроек (H)"></button>
+        </div>
+        <div class="hint" id="hint">Потяните — повернуть · Клик — перевернуть</div>
+        <div class="toast" id="toast" role="status"></div>
+        <div class="loader" id="loader"><div><i></i>Загрузка</div></div>
+      </main>
+      <aside class="panel" id="panel" aria-label="Настройки"></aside>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

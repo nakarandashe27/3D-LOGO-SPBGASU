@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.playwright-mcp/
+.claude/
+*.log
+# референсы (чужой пост из Threads, видео 53 МБ) — только локально
+IMG_*.MP4
+IMG_*.PNG
