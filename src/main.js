@@ -14,6 +14,7 @@ import { download, exportPNG, exportGLB, recordCanvas } from './export.js';
 
 const DEFAULTS = {
   view: 'assembled',
+  logo: 'new',
   quality: 'high',
   interaction: 'rotate',
   autoRotate: true,
@@ -47,6 +48,10 @@ const SCHEMA = {
         { type: 'segment', key: 'view', label: 'Вид', options: [
           { value: 'assembled', label: 'Собран', icon: 'circle' },
           { value: 'layers', label: 'По слоям', icon: 'layers' },
+        ] },
+        { type: 'segment', key: 'logo', label: 'Логотип', options: [
+          { value: 'new', label: 'Новый' },
+          { value: 'classic', label: 'Классический' },
         ] },
         { type: 'segment', key: 'quality', label: 'Разрешение', options: [
           { value: 'high', label: 'High' },
@@ -219,13 +224,14 @@ const layer = (id) => emblem.layers.find((l) => l.id === id);
 
 function rebuild() {
   if (emblem) disposeEmblem(emblem);
-  emblem = buildEmblem({ form: state.form, style: state.style }, mats);
+  emblem = buildEmblem({ form: state.form, style: state.style, logo: state.logo }, mats);
   flipper.add(emblem.group);
 
-  if (!backCache.has(state.form)) {
-    backCache.set(state.form, createBackTextures({ outlines: emblem.outlines, gemPos: emblem.gemPos }));
+  const backKey = `${state.logo}:${state.form}`;
+  if (!backCache.has(backKey)) {
+    backCache.set(backKey, createBackTextures({ outlines: emblem.outlines, layout: emblem.backLayout }));
   }
-  back = backCache.get(state.form);
+  back = backCache.get(backKey);
   mats.back.map = back.albedo;
   mats.back.roughnessMap = back.rough;
   mats.back.bumpMap = back.bump;
@@ -330,6 +336,7 @@ function labelContent() {
     rim: { title: 'Контур', subtitle: `${metal}, ${finish}` },
     resin: { title: 'Эпоксидная смола', subtitle: 'Прозрачный купол-линза' },
     ink: { title: 'Знак', subtitle: cloisonne ? `Горячая эмаль · ${enamel}` : 'Металлический рельеф' },
+    accent: { title: 'Штриховка и дата', subtitle: cloisonne ? 'Чернение по металлу' : 'Матовый рельеф' },
     pattern: { title: 'Узор', subtitle: cloisonne ? 'Гравировка по металлу' : 'Металлическая печать' },
     field: cloisonne
       ? { title: 'Перегородки', subtitle: `${metal}, техника клуазоне` }
@@ -609,7 +616,7 @@ let busy = false;
 
 async function onAction(action) {
   if (action === 'reset') {
-    const rebuildNeeded = state.form !== DEFAULTS.form || state.style !== DEFAULTS.style;
+    const rebuildNeeded = ['form', 'style', 'logo'].some((k) => state[k] !== DEFAULTS[k]);
     Object.assign(state, DEFAULTS);
     if (rebuildNeeded) rebuild();
     applyQuality();
@@ -687,6 +694,7 @@ function set(key, value) {
   if (state[key] === value) return;
   state[key] = value;
   switch (key) {
+    case 'logo':
     case 'form':
     case 'style':
       rebuild();

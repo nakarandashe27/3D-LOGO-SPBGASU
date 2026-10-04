@@ -37,7 +37,9 @@ export class LayerLabels {
       const layer = visible[index];
       // подписи чередуются сверху/снизу и ступенькой по высоте, чтобы не налезать друг на друга
       const isTop = index % 2 === 1;
-      layer.anchor.y = isTop ? layer.top : layer.bottom;
+      const edge = isTop ? layer.top : layer.bottom;
+      layer.anchor.x = edge.x;
+      layer.anchor.y = edge.y;
       layer.object.updateWorldMatrix(true, false);
       v.copy(layer.anchor).applyMatrix4(layer.object.matrixWorld).project(camera);
       const x = (v.x * 0.5 + 0.5) * width;

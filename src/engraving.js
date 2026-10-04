@@ -31,7 +31,7 @@ const gray = (v) => {
   return `rgb(${n},${n},${n})`;
 };
 
-function drawMask({ bounds, engraveBorder, gemPos }) {
+function drawMask({ bounds, engraveBorder, layout: L }) {
   const W = Math.ceil((bounds.maxX - bounds.minX) * K);
   const H = Math.ceil((bounds.maxY - bounds.minY) * K);
   const mask = makeCanvas(W, H);
@@ -56,8 +56,8 @@ function drawMask({ bounds, engraveBorder, gemPos }) {
   });
 
   // Лучи вокруг кристалла — как клинчатые камни над аркой на фасаде
-  const gx = X(gemPos.x);
-  const gy = Y(gemPos.y);
+  const gx = X(L.gem.x);
+  const gy = Y(L.gem.y);
   const rays = 40;
   ctx.lineWidth = 0.26 * K;
   for (let i = 0; i < rays; i++) {
@@ -74,13 +74,41 @@ function drawMask({ bounds, engraveBorder, gemPos }) {
   ctx.arc(gx, gy, 4.85 * K, 0, Math.PI * 2);
   ctx.stroke();
 
+  // Заштрихованная сетка (классическая версия): клетки со штриховкой под 45°
+  const CELL = 7.4;
+  const GAP = 1.5;
+  ctx.lineWidth = 0.3 * K;
+  for (const r of L.hatch) {
+    const nx = Math.max(1, Math.floor((r.maxX - r.minX + GAP) / (CELL + GAP)));
+    const ny = Math.max(1, Math.floor((r.maxY - r.minY + GAP) / (CELL + GAP)));
+    const ox = r.minX + (r.maxX - r.minX - (nx * CELL + (nx - 1) * GAP)) / 2;
+    const oy = r.minY + (r.maxY - r.minY - (ny * CELL + (ny - 1) * GAP)) / 2;
+    for (let i = 0; i < nx; i++) {
+      for (let j = 0; j < ny; j++) {
+        const x0 = ox + i * (CELL + GAP);
+        const y0 = oy + j * (CELL + GAP);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(X(x0 + CELL), Y(y0 + CELL), CELL * K, CELL * K);
+        ctx.clip();
+        for (let t = -CELL; t < CELL * 2; t += 1.25) {
+          ctx.beginPath();
+          ctx.moveTo(X(x0 + t), Y(y0));
+          ctx.lineTo(X(x0 + t + CELL), Y(y0 + CELL));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+  }
+
   // Линия карниза
-  const cx = X(0);
+  const cx = X(L.axis);
   ctx.lineWidth = 0.22 * K;
-  for (const y of [40.4, 39.4]) {
+  for (const y of L.cornice.y) {
     ctx.beginPath();
-    ctx.moveTo(cx - 33 * K, Y(y));
-    ctx.lineTo(cx + 33 * K, Y(y));
+    ctx.moveTo(cx - L.cornice.half * K, Y(y));
+    ctx.lineTo(cx + L.cornice.half * K, Y(y));
     ctx.stroke();
   }
 
@@ -95,32 +123,32 @@ function drawMask({ bounds, engraveBorder, gemPos }) {
   ctx.font = `600 ${5 * K}px ${FONT}`;
   if ('letterSpacing' in ctx) ctx.letterSpacing = `${0.08 * 5 * K}px`;
   const widest = Math.max(...LINES.map((l) => ctx.measureText(l).width));
-  const size = Math.min(4.6, (5 * (58 * K)) / widest);
-  LINES.forEach((line, i) => text(line, 31 - i * 7.4, size));
+  const size = Math.min(4.6, (5 * (L.lineWidth * K)) / widest);
+  LINES.forEach((line, i) => text(line, L.lines[i], size));
 
   // Разделитель
   ctx.lineWidth = 0.22 * K;
   for (const s of [-1, 1]) {
     ctx.beginPath();
-    ctx.moveTo(cx + s * 3.6 * K, Y(-6.5));
-    ctx.lineTo(cx + s * 22 * K, Y(-6.5));
+    ctx.moveTo(cx + s * 3.6 * K, Y(L.divider));
+    ctx.lineTo(cx + s * 22 * K, Y(L.divider));
     ctx.stroke();
   }
   ctx.beginPath();
-  ctx.moveTo(cx, Y(-6.5 + 1.5));
-  ctx.lineTo(cx + 1.5 * K, Y(-6.5));
-  ctx.lineTo(cx, Y(-6.5 - 1.5));
-  ctx.lineTo(cx - 1.5 * K, Y(-6.5));
+  ctx.moveTo(cx, Y(L.divider + 1.5));
+  ctx.lineTo(cx + 1.5 * K, Y(L.divider));
+  ctx.lineTo(cx, Y(L.divider - 1.5));
+  ctx.lineTo(cx - 1.5 * K, Y(L.divider));
   ctx.closePath();
   ctx.fill();
 
-  text('ОСНОВАН В', -13.6, 2.7, 560, 0.42);
-  text('1832', -26, 12.5, 680, 0.03);
-  text('SPBGASU.RU', -46.5, 2.5, 560, 0.42);
+  text('ОСНОВАН В', L.founded, 2.7, 560, 0.42);
+  text('1832', L.year, 12.5, 680, 0.03);
+  text('SPBGASU.RU', L.site, 2.5, 560, 0.42);
 
   for (const dx of [-3.2, 0, 3.2]) {
     const x = cx + dx * K;
-    const y = Y(-61);
+    const y = Y(L.dots);
     const r = 0.75 * K;
     ctx.beginPath();
     ctx.moveTo(x, y - r);
@@ -133,8 +161,8 @@ function drawMask({ bounds, engraveBorder, gemPos }) {
   return mask;
 }
 
-export function createBackTextures({ outlines, gemPos }) {
-  const mask = drawMask({ bounds: outlines.bounds, engraveBorder: outlines.engraveBorder, gemPos });
+export function createBackTextures({ outlines, layout }) {
+  const mask = drawMask({ bounds: outlines.bounds, engraveBorder: outlines.engraveBorder, layout });
   const { width: W, height: H } = mask;
 
   const albedoCanvas = makeCanvas(W, H);

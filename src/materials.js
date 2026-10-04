@@ -103,7 +103,22 @@ export function createMaterials() {
     attenuationDistance: 0.08,
   });
 
-  return { metal, back, enamel, pattern, resin, resinLite, gem };
+  // Чернение — тёмный сплав, вплавленный в металл (штриховка и дата классического логотипа)
+  const niello = new THREE.MeshPhysicalMaterial({
+    name: 'niello',
+    color: '#2c2c30',
+    metalness: 0.55,
+    roughness: 0.34,
+  });
+
+  // Матовый металл — второй уровень рельефа
+  const metalMatte = new THREE.MeshPhysicalMaterial({
+    name: 'metal-matte',
+    metalness: 1,
+    roughness: 0.5,
+  });
+
+  return { metal, back, enamel, pattern, resin, resinLite, gem, niello, metalMatte };
 }
 
 /** Применяет состояние (металл, обработка, эмаль, камень, исполнение) к материалам. */
@@ -117,6 +132,10 @@ export function applyMaterialState(m, state) {
   m.metal.anisotropyRotation = 0;
 
   m.back.color.copy(metal.color);
+
+  m.metalMatte.color.copy(metal.color);
+  m.metalMatte.roughness = Math.max(finish.roughness + 0.3, 0.48);
+  m.niello.clearcoat = state.resin ? 0 : 0.7;
 
   m.enamel.color.set(ENAMELS[state.enamel].color);
   // под смолой эмаль не лакируем — глянец даёт сама смола
